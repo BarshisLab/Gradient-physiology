@@ -1,0 +1,4 @@
+Map code requires the following to run:
+(1) the "GPSCoordinates.csv" file in this folder
+(2) the "gshhg-bin-2.3.7" folder from NOAA: https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhs/latest/
+(3) the "ct5km_climatology_v3.1.nc" file from NOAA: ftp://ftp.star.nesdis.noaa.gov/pub/sod/mecb/crw/data/5km/v3.1/climatology/nc/ct5km_climatology_v3.1.nc.

@@ -1,0 +1,444 @@
+#Code to summarize data in Table S1 of "A universal, empirically derived proxy for coral bleaching susceptibility"
+
+#setwd to source file location
+
+## List of assays: - Al Wajh: 2 (one for Stylo/Porites, one for Acr/Poci)
+#                  - Yanbu: 2 (one for Stylo/Porites, one for Acr/Poci)
+#                  - AlFahal: 2 (one for Stylo/Porites, one for Acr/Poci)
+#                  - Al Qufundhah: 1 (for Stylo/Porites)
+#                  - Eilat: Manual measurements
+#                  - Obock: 2 (one for Stylo/Porites, one for Poci) - NEED TO DOWNLOAD FROM HOBO LOGGERS IN LAB
+
+#### Create spoing for CBASS HOBO logs for Al Wajh, Yanbu, AlFahal, and Al Q ####
+boing1<-read.delim("2018-08-19_StressTank30A_clean.txt")
+boing1$DateTime<-strptime(boing1$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing1$DateTime<-as.character(boing1$DateTime)
+
+boing2<-read.delim("2018-08-19_StressTank30B_clean.txt")
+boing2$DateTime<-strptime(boing2$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing2$DateTime<-as.character(boing2$DateTime)
+spoing<-merge(boing1[2:3], boing2[2:3], by="DateTime", all=T)
+
+boing3<-read.delim("2018-08-19_StressTank33A_clean.txt")
+boing3$DateTime<-strptime(boing3$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing3$DateTime<-as.character(boing3$DateTime)
+spoing<-merge(spoing, boing3[2:3], by="DateTime", all=T)
+
+boing4<-read.delim("2018-08-19_StressTank33B_clean.txt")
+boing4$DateTime<-strptime(boing4$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing4$DateTime<-as.character(boing4$DateTime)
+spoing<-merge(spoing, boing4[2:3], by="DateTime", all=T)
+
+boing5<-read.delim("2018-08-19_StressTank36A_clean.txt")
+boing5$DateTime<-strptime(boing5$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing5$DateTime<-as.character(boing5$DateTime)
+spoing<-merge(spoing, boing5[2:3], by="DateTime", all=T)
+
+boing6<-read.delim("2018-08-19_StressTank36B_clean.txt")
+boing6$DateTime<-strptime(boing6$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing6$DateTime<-as.character(boing6$DateTime)
+spoing<-merge(spoing, boing6[2:3], by="DateTime", all=T)
+
+boing7<-read.delim("2018-08-19_StressTank39A_clean.txt")
+boing7$DateTime<-strptime(boing7$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing7$DateTime<-as.character(boing7$DateTime)
+spoing<-merge(spoing, boing7[2:3], by="DateTime", all=T)
+
+boing8<-read.delim("2018-08-19_StressTank39B_clean.txt")
+boing8$DateTime<-strptime(boing8$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing8$DateTime<-as.character(boing8$DateTime)
+spoing<-merge(spoing, boing8[2:3], by="DateTime", all=T)
+
+#### Clean up/organise main data file ####
+
+library(reshape2)
+spoing$DateTime<-as.POSIXct(spoing$DateTime, tz="UTC")
+CBASS_full <- melt(spoing, id="DateTime")
+
+names(CBASS_full)[names(CBASS_full) == "DateTime"] <- "date"
+names(CBASS_full)[names(CBASS_full) == "variable"] <- "Tank"
+names(CBASS_full)[names(CBASS_full) == "value"] <- "Temp"
+
+library(openair)
+CBASS_full$date<-as.POSIXct(CBASS_full$date)
+
+print(levels(CBASS_full$Tank))
+
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTanks30A"] <- "30A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTank30B"] <- "30B"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTank33A"] <- "33A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTank33B"] <- "33B"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTank36A"] <- "36A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTank36B"] <- "36B"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTank39A"] <- "39A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="X2018.08.19_StressTank39B"] <- "39B"
+
+CBASS_full <- na.omit(CBASS_full)
+CBASS_av<-timeAverage(CBASS_full, avg.time = "30 min", type = "Tank")
+
+################################
+#### Split and plot by site ####
+################################
+
+#### AlWajh Sty and Por ####
+AlWajh_Sty_Por1<-selectByDate(CBASS_av, start = "2018-07-30", end = "2018-07-30",hour = 12:23)
+AlWajh_Sty_Por2<-selectByDate(CBASS_av, start = "2018-07-31", end = "2018-07-31",hour = 00:08)
+library(dplyr)
+AlWajh_Sty_Por<-bind_rows(AlWajh_Sty_Por1, AlWajh_Sty_Por2)
+AlWajh_Sty_Por$Temp<-as.numeric(AlWajh_Sty_Por$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+AlWajh_Sty_Por_hold<-selectByDate(CBASS_full, start = "2018-07-30", end = "2018-07-30",hour = 16:18)
+AlWajh_Sty_Por_hold$Temp<-as.numeric(AlWajh_Sty_Por_hold$Temp)
+AlWajh_Sty_Por_summary <- ddply(AlWajh_Sty_Por_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                                sd   = sd(Temp),
+                                se   = sd / sqrt(N))
+AlWajh_Sty_Por_summary
+
+#### AlWajh Acr and Poc ####
+AlWajh_Acr_Poc1<-selectByDate(CBASS_av, start = "2018-07-31", end = "2018-07-31",hour = 12:23)
+AlWajh_Acr_Poc2<-selectByDate(CBASS_av, start = "2018-08-01", end = "2018-08-01",hour = 00:08)
+library(dplyr)
+AlWajh_Acr_Poc<-bind_rows(AlWajh_Acr_Poc1, AlWajh_Acr_Poc2)
+AlWajh_Acr_Poc$Temp<-as.numeric(AlWajh_Acr_Poc$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+AlWajh_Acr_Poc_hold<-selectByDate(CBASS_full, start = "2018-07-31", end = "2018-07-31",hour = 16:18)
+AlWajh_Acr_Poc_hold$Temp<-as.numeric(AlWajh_Acr_Poc_hold$Temp)
+AlWajh_Acr_Poc_summary <- ddply(AlWajh_Acr_Poc_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                                sd   = sd(Temp),
+                                se   = sd / sqrt(N))
+AlWajh_Acr_Poc_summary
+
+#################################################
+
+#### Yanbu Sty and Por ####
+Yanbu_Sty_Por1<-selectByDate(CBASS_av, start = "2018-08-04", end = "2018-08-04",hour = 12:23)
+Yanbu_Sty_Por2<-selectByDate(CBASS_av, start = "2018-08-05", end = "2018-08-05",hour = 00:08)
+library(dplyr)
+Yanbu_Sty_Por<-bind_rows(Yanbu_Sty_Por1, Yanbu_Sty_Por2)
+Yanbu_Sty_Por$Temp<-as.numeric(Yanbu_Sty_Por$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+Yanbu_Sty_Por_hold<-selectByDate(CBASS_full, start = "2018-08-04", end = "2018-08-04",hour = 16:18)
+Yanbu_Sty_Por_hold$Temp<-as.numeric(Yanbu_Sty_Por_hold$Temp)
+Yanbu_Sty_Por_summary <- ddply(Yanbu_Sty_Por_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                                sd   = sd(Temp),
+                                se   = sd / sqrt(N))
+Yanbu_Sty_Por_summary
+
+#### Yanbu Acr and Poc ####
+Yanbu_Acr_Poc1<-selectByDate(CBASS_av, start = "2018-08-05", end = "2018-08-05",hour = 12:23)
+Yanbu_Acr_Poc2<-selectByDate(CBASS_av, start = "2018-08-06", end = "2018-08-06",hour = 00:08)
+library(dplyr)
+Yanbu_Acr_Poc<-bind_rows(Yanbu_Acr_Poc1, Yanbu_Acr_Poc2)
+Yanbu_Acr_Poc$Temp<-as.numeric(Yanbu_Acr_Poc$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+Yanbu_Acr_Poc_hold<-selectByDate(CBASS_full, start = "2018-08-05", end = "2018-08-05",hour = 16:18)
+Yanbu_Acr_Poc_hold$Temp<-as.numeric(Yanbu_Acr_Poc_hold$Temp)
+Yanbu_Acr_Poc_summary <- ddply(Yanbu_Acr_Poc_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                                sd   = sd(Temp),
+                                se   = sd / sqrt(N))
+Yanbu_Acr_Poc_summary
+
+#################################################
+
+#### AlFahal Sty and Por ####
+AlFahal_Sty_Por1<-selectByDate(CBASS_av, start = "2018-08-07", end = "2018-08-07",hour = 13:23)
+AlFahal_Sty_Por2<-selectByDate(CBASS_av, start = "2018-08-08", end = "2018-08-08",hour = 00:08)
+library(dplyr)
+AlFahal_Sty_Por<-bind_rows(AlFahal_Sty_Por1, AlFahal_Sty_Por2)
+AlFahal_Sty_Por$Temp<-as.numeric(AlFahal_Sty_Por$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+AlFahal_Sty_Por_hold<-selectByDate(CBASS_full, start = "2018-08-07", end = "2018-08-07",hour = 16:18)
+AlFahal_Sty_Por_hold$Temp<-as.numeric(AlFahal_Sty_Por_hold$Temp)
+AlFahal_Sty_Por_summary <- ddply(AlFahal_Sty_Por_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                               sd   = sd(Temp),
+                               se   = sd / sqrt(N))
+AlFahal_Sty_Por_summary
+
+#### AlFahal Acr and Poc ####
+AlFahal_Acr_Poc1<-selectByDate(CBASS_av, start = "2018-08-08", end = "2018-08-08",hour = 13:23)
+AlFahal_Acr_Poc2<-selectByDate(CBASS_av, start = "2018-08-09", end = "2018-08-09",hour = 00:08)
+library(dplyr)
+AlFahal_Acr_Poc<-bind_rows(AlFahal_Acr_Poc1, AlFahal_Acr_Poc2)
+AlFahal_Acr_Poc$Temp<-as.numeric(AlFahal_Acr_Poc$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+AlFahal_Acr_Poc_hold<-selectByDate(CBASS_full, start = "2018-08-08", end = "2018-08-08",hour = 16:18)
+AlFahal_Acr_Poc_hold$Temp<-as.numeric(AlFahal_Acr_Poc_hold$Temp)
+AlFahal_Acr_Poc_summary <- ddply(AlFahal_Acr_Poc_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                               sd   = sd(Temp),
+                               se   = sd / sqrt(N))
+AlFahal_Acr_Poc_summary
+
+#################################################
+
+#### AlQ Sty and Por ####
+AlQ_Sty_Por1<-selectByDate(CBASS_av, start = "2018-08-12", end = "2018-08-12",hour = 13:23)
+AlQ_Sty_Por2<-selectByDate(CBASS_av, start = "2018-08-13", end = "2018-08-13",hour = 00:04)
+library(dplyr)
+AlQ_Sty_Por<-bind_rows(AlQ_Sty_Por1, AlQ_Sty_Por2)
+AlQ_Sty_Por$Temp<-as.numeric(AlQ_Sty_Por$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+AlQ_Sty_Por_hold<-selectByDate(CBASS_full, start = "2018-08-12", end = "2018-08-12",hour = 16:18)
+AlQ_Sty_Por_hold$Temp<-as.numeric(AlQ_Sty_Por_hold$Temp)
+AlQ_Sty_Por_summary <- ddply(AlQ_Sty_Por_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                               sd   = sd(Temp),
+                               se   = sd / sqrt(N))
+AlQ_Sty_Por_summary
+
+#### Organise/clean up Djibouti temp logger data ####
+
+boing1<-read.delim("DJI_Tank-1_clean.txt")
+boing1$DateTime<-strptime(boing1$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing1$DateTime<-as.character(boing1$DateTime)
+
+boing2<-read.delim("DJI_Tank-2_clean.txt")
+boing2$DateTime<-strptime(boing2$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing2$DateTime<-as.character(boing2$DateTime)
+spoing<-merge(boing1[2:3], boing2[2:3], by="DateTime", all=T)
+
+boing3<-read.delim("DJI_Tank-3_clean.txt")
+boing3$DateTime<-strptime(boing3$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing3$DateTime<-as.character(boing3$DateTime)
+spoing<-merge(spoing, boing3[2:3], by="DateTime", all=T)
+
+boing4<-read.delim("DJI_Tank-4_clean.txt")
+boing4$DateTime<-strptime(boing4$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing4$DateTime<-as.character(boing4$DateTime)
+spoing<-merge(spoing, boing4[2:3], by="DateTime", all=T)
+
+boing5<-read.delim("DJI_Tank-5_clean.txt")
+boing5$DateTime<-strptime(boing5$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing5$DateTime<-as.character(boing5$DateTime)
+spoing<-merge(spoing, boing5[2:3], by="DateTime", all=T)
+
+boing6<-read.delim("DJI_Tank-6_clean.txt")
+boing6$DateTime<-strptime(boing6$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing6$DateTime<-as.character(boing6$DateTime)
+spoing<-merge(spoing, boing6[2:3], by="DateTime", all=T)
+
+boing7<-read.delim("DJI_Tank-7_clean.txt")
+boing7$DateTime<-strptime(boing7$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing7$DateTime<-as.character(boing7$DateTime)
+spoing<-merge(spoing, boing7[2:3], by="DateTime", all=T)
+
+boing8<-read.delim("DJI_Tank-8_clean.txt")
+boing8$DateTime<-strptime(boing8$DateTime, format="%m/%d/%y %I:%M:%S %p")
+boing8$DateTime<-as.character(boing8$DateTime)
+spoing<-merge(spoing, boing8[2:3], by="DateTime", all=T)
+
+#### Clean up/organise main data file ####
+
+library(reshape2)
+spoing$DateTime<-as.POSIXct(spoing$DateTime, tz="UTC")
+CBASS_full <- melt(spoing, id="DateTime")
+
+names(CBASS_full)[names(CBASS_full) == "DateTime"] <- "date"
+names(CBASS_full)[names(CBASS_full) == "variable"] <- "Tank"
+names(CBASS_full)[names(CBASS_full) == "value"] <- "Temp"
+
+library(openair)
+CBASS_full$date<-as.POSIXct(CBASS_full$date)
+
+print(levels(CBASS_full$Tank))
+
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.1"] <- "30A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.2"] <- "30B"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.3"] <- "33A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.4"] <- "33B"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.5"] <- "36A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.6"] <- "36B"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.7"] <- "39A"
+levels(CBASS_full$Tank)[levels(CBASS_full$Tank)=="DJI_Tank.8"] <- "39B"
+
+CBASS_full <- na.omit(CBASS_full)
+CBASS_av<-timeAverage(CBASS_full, avg.time = "30 min", type = "Tank")
+
+################################
+#### Split and plot by site ####
+################################
+
+#### Obock Sty and Poc ####
+Obock_Sty_Poc1<-selectByDate(CBASS_av, start = "2020-03-01", end = "2020-03-01",hour = 13:23)
+Obock_Sty_Poc2<-selectByDate(CBASS_av, start = "2020-03-02", end = "2020-03-02",hour = 00:04)
+
+library(dplyr)
+Obock_Sty_Poc<-bind_rows(Obock_Sty_Poc1, Obock_Sty_Poc2)
+Obock_Sty_Poc$Temp<-as.numeric(Obock_Sty_Poc$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+Obock_Sty_Poc_hold<-selectByDate(CBASS_full, start = "2020-03-01", end = "2020-03-01",hour = 16:18)
+Obock_Sty_Poc_hold$Temp<-as.numeric(Obock_Sty_Poc_hold$Temp)
+Obock_Sty_Poc_summary <- ddply(Obock_Sty_Poc_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                             sd   = sd(Temp),
+                             se   = sd / sqrt(N))
+Obock_Sty_Poc_summary
+
+#### Obock Por ####
+Obock_Por1<-selectByDate(CBASS_av, start = "2020-03-02", end = "2020-03-02",hour = 15:23)
+Obock_Por2<-selectByDate(CBASS_av, start = "2020-03-03", end = "2020-03-03",hour = 00:07)
+
+library(dplyr)
+Obock_Por<-bind_rows(Obock_Por1, Obock_Por2)
+Obock_Por$Temp<-as.numeric(Obock_Por$Temp)
+
+#calculate mean temp during the hold
+library(plyr)
+Obock_Por_hold<-selectByDate(CBASS_full, start = "2020-03-02", end = "2020-03-02",hour = 17:19)
+Obock_Por_hold$Temp<-as.numeric(Obock_Por_hold$Temp)
+Obock_Por_summary <- ddply(Obock_Por_hold, c("Tank"), summarise, N= length(Temp), mean = mean(Temp),
+                               sd   = sd(Temp),
+                               se   = sd / sqrt(N))
+Obock_Por_summary
+
+####################################################
+#### Extracting 36B temps from CBASS probe logs #### 
+####################################################
+
+#AlWajh_Sty_Por
+AlWajh_Sty_Por1<-read.csv("2018-07-30_AlWajhRamp1_5-8LOG.txt")
+AlWajh_Sty_Por1$time<-strptime(paste(AlWajh_Sty_Por1$Date,paste(AlWajh_Sty_Por1$Th,AlWajh_Sty_Por1$Tm,AlWajh_Sty_Por1$Ts,sep=":"),sep=" "),format="%Y_%B_%d %H:%M:%S")
+AlWajh_Sty_Por1<-AlWajh_Sty_Por1[order(AlWajh_Sty_Por1$time),]
+AlWajh_Sty_Por1<-subset(AlWajh_Sty_Por1, select=c(20,11))
+
+library(plyr)
+
+names(AlWajh_Sty_Por1)[names(AlWajh_Sty_Por1) == "time"] <- "date"
+names(AlWajh_Sty_Por1)[names(AlWajh_Sty_Por1) == "T2inT"] <- "Temp"
+
+library(openair)
+
+AlWajh_Sty_Por1$date<-as.POSIXct(AlWajh_Sty_Por1$date, tz = "UTC")
+
+AlWajh_Sty_Por1 <- na.omit(AlWajh_Sty_Por1)
+
+AlWajh_Sty_PorA<-selectByDate(AlWajh_Sty_Por1, start = "2018-07-30", end = "2018-07-30", hour = 12:23)
+AlWajh_Sty_PorB<-selectByDate(AlWajh_Sty_Por1, start = "2018-07-31", end = "2018-07-31", hour = 00:08)
+
+AlWajh_Sty_PorC<-rbind(AlWajh_Sty_PorA, AlWajh_Sty_PorB)
+AlWajh_Sty_PorC$Temp<-as.character(AlWajh_Sty_PorC$Temp)
+AlWajh_Sty_PorC$Temp<-as.numeric(AlWajh_Sty_PorC$Temp)
+AlWajh_Sty_Por_av<-timeAverage(AlWajh_Sty_PorC, avg.time = "30 min")
+AlWajh_Sty_Por_av <- na.omit(AlWajh_Sty_Por_av)
+
+library(plotrix)
+AlWajh_Sty_Por_hold<-selectByDate(AlWajh_Sty_PorC, start = "2018-07-30", end = "2018-07-30",hour = 17:19)
+
+mean(AlWajh_Sty_Por_hold$Temp)
+std.error(AlWajh_Sty_Por_hold$Temp)
+
+############################################################
+
+#AlWajh_Acr_Poc
+AlWajh_Acr_Poc1<-read.csv("2018-07-31_AlWajhRamp2_5-8LOG.txt")
+AlWajh_Acr_Poc1$time<-strptime(paste(AlWajh_Acr_Poc1$Date,paste(AlWajh_Acr_Poc1$Th,AlWajh_Acr_Poc1$Tm,AlWajh_Acr_Poc1$Ts,sep=":"),sep=" "),format="%Y_%B_%d %H:%M:%S")
+AlWajh_Acr_Poc1<-AlWajh_Acr_Poc1[order(AlWajh_Acr_Poc1$time),]
+AlWajh_Acr_Poc1<-subset(AlWajh_Acr_Poc1, select=c(20,11))
+
+library(plyr)
+
+names(AlWajh_Acr_Poc1)[names(AlWajh_Acr_Poc1) == "time"] <- "date"
+names(AlWajh_Acr_Poc1)[names(AlWajh_Acr_Poc1) == "T2inT"] <- "Temp"
+
+library(openair)
+AlWajh_Acr_Poc1$date<-as.POSIXct(AlWajh_Acr_Poc1$date, tz = "UTC")
+
+AlWajh_Acr_Poc1 <- na.omit(AlWajh_Acr_Poc1)
+
+AlWajh_Acr_PocA<-selectByDate(AlWajh_Acr_Poc1, start = "2018-07-31", end = "2018-07-31",hour = 12:23)
+AlWajh_Acr_PocB<-selectByDate(AlWajh_Acr_Poc1, start = "2018-08-01", end = "2018-08-01",hour = 00:08)
+
+AlWajh_Acr_PocC<-rbind(AlWajh_Acr_PocA, AlWajh_Acr_PocB)
+AlWajh_Acr_PocC$Temp<-as.character(AlWajh_Acr_PocC$Temp)
+AlWajh_Acr_PocC$Temp<-as.numeric(AlWajh_Acr_PocC$Temp)
+AlWajh_Acr_Poc_av<-timeAverage(AlWajh_Acr_PocC, avg.time = "30 min")
+AlWajh_Acr_Poc_av <- na.omit(AlWajh_Acr_Poc_av)
+
+library(plotrix)
+AlWajh_Acr_Poc_hold<-selectByDate(AlWajh_Acr_PocC, start = "2018-07-31", end = "2018-07-31",hour = 17:19)
+
+mean(AlWajh_Acr_Poc_hold$Temp)
+std.error(AlWajh_Acr_Poc_hold$Temp)
+
+#################################################################
+
+#Yanbu_Sty_Por
+Yanbu_Sty_Por1<-read.csv("2018-08-04_Yanbu5-8LOG.txt")
+Yanbu_Sty_Por1$time<-strptime(paste(Yanbu_Sty_Por1$Date,paste(Yanbu_Sty_Por1$Th,Yanbu_Sty_Por1$Tm,Yanbu_Sty_Por1$Ts,sep=":"),sep=" "),format="%Y_%B_%d %H:%M:%S")
+Yanbu_Sty_Por1<-Yanbu_Sty_Por1[order(Yanbu_Sty_Por1$time),]
+Yanbu_Sty_Por1<-subset(Yanbu_Sty_Por1, select=c(20,11))
+
+library(plyr)
+
+names(Yanbu_Sty_Por1)[names(Yanbu_Sty_Por1) == "time"] <- "date"
+names(Yanbu_Sty_Por1)[names(Yanbu_Sty_Por1) == "T2inT"] <- "Temp"
+
+library(openair)
+Yanbu_Sty_Por1$date<-as.POSIXct(Yanbu_Sty_Por1$date, tz = "UTC")
+
+Yanbu_Sty_Por1 <- na.omit(Yanbu_Sty_Por1)
+
+Yanbu_Sty_PorA<-selectByDate(Yanbu_Sty_Por1, start = "2018-08-04", end = "2018-08-04",hour = 12:23)
+Yanbu_Sty_PorB<-selectByDate(Yanbu_Sty_Por1, start = "2018-08-05", end = "2018-08-05",hour = 00:08)
+
+Yanbu_Sty_PorC<-rbind(Yanbu_Sty_PorA, Yanbu_Sty_PorB)
+Yanbu_Sty_PorC$Temp<-as.character(Yanbu_Sty_PorC$Temp)
+Yanbu_Sty_PorC$Temp<-as.numeric(Yanbu_Sty_PorC$Temp)
+Yanbu_Sty_Por_av<-timeAverage(Yanbu_Sty_PorC, avg.time = "30 min")
+Yanbu_Sty_Por_av <- na.omit(Yanbu_Sty_Por_av)
+
+library(plotrix)
+Yanbu_Sty_Por_hold<-selectByDate(Yanbu_Sty_PorC, start = "2018-08-04", end = "2018-08-04",hour = 17:19)
+
+mean(Yanbu_Sty_Por_hold$Temp)
+std.error(Yanbu_Sty_Por_hold$Temp)
+
+############################################################
+
+#Yanbu_Acr_Poc
+Yanbu_Acr_Poc1<-read.csv("2018-08-05_Yanbu5-8LOG.txt")
+Yanbu_Acr_Poc1$time<-strptime(paste(Yanbu_Acr_Poc1$Date,paste(Yanbu_Acr_Poc1$Th,Yanbu_Acr_Poc1$Tm,Yanbu_Acr_Poc1$Ts,sep=":"),sep=" "),format="%Y_%B_%d %H:%M:%S")
+Yanbu_Acr_Poc1<-Yanbu_Acr_Poc1[order(Yanbu_Acr_Poc1$time),]
+Yanbu_Acr_Poc1<-subset(Yanbu_Acr_Poc1, select=c(20,11))
+
+library(plyr)
+
+names(Yanbu_Acr_Poc1)[names(Yanbu_Acr_Poc1) == "time"] <- "date"
+names(Yanbu_Acr_Poc1)[names(Yanbu_Acr_Poc1) == "T2inT"] <- "Temp"
+
+library(openair)
+Yanbu_Acr_Poc1$date<-as.POSIXct(Yanbu_Acr_Poc1$date, tz = "UTC")
+
+Yanbu_Acr_Poc1 <- na.omit(Yanbu_Acr_Poc1)
+
+Yanbu_Acr_PocA<-selectByDate(Yanbu_Acr_Poc1, start = "2018-08-05", end = "2018-08-05",hour = 12:23)
+Yanbu_Acr_PocB<-selectByDate(Yanbu_Acr_Poc1, start = "2018-08-06", end = "2018-08-06",hour = 00:08)
+
+Yanbu_Acr_PocC<-rbind(Yanbu_Acr_PocA, Yanbu_Acr_PocB)
+Yanbu_Acr_PocC$Temp<-as.character(Yanbu_Acr_PocC$Temp)
+Yanbu_Acr_PocC$Temp<-as.numeric(Yanbu_Acr_PocC$Temp)
+Yanbu_Acr_Poc_av<-timeAverage(Yanbu_Acr_PocC, avg.time = "30 min")
+Yanbu_Acr_Poc_av <- na.omit(Yanbu_Acr_Poc_av)
+
+library(plotrix)
+Yanbu_Acr_Poc_hold<-selectByDate(Yanbu_Acr_PocC, start = "2018-08-05", end = "2018-08-05",hour = 17:19)
+
+mean(Yanbu_Acr_Poc_hold$Temp)
+std.error(Yanbu_Acr_Poc_hold$Temp)
+
+
+
+#END
