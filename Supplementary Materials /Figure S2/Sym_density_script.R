@@ -10,7 +10,7 @@ library(tidyr)
 library(dplyr)
 library(reshape2)
 
-Full_Physiology<-read.csv("Gradient_physiology_clean.csv")
+Full_Physiology<-read.csv("Gradient_sym-density_clean.csv")
 Full_Physiology$Temp<-as.factor(Full_Physiology$Temp)
 Full_Physiology$Geno<-as.factor(Full_Physiology$Geno)
 Full_Physiology$Site<-as.factor(Full_Physiology$Site)
