@@ -7,7 +7,7 @@
 #                  - AlFahal: 2 (one for Stylo/Porites, one for Acr/Poci)
 #                  - Al Qufundhah: 1 (for Stylo/Porites)
 #                  - Eilat: Manual measurements
-#                  - Obock: 2 (one for Stylo/Porites, one for Poci) - NEED TO DOWNLOAD FROM HOBO LOGGERS IN LAB
+#                  - Obock: 2 (one for Stylo/Porites, one for Poci)
 
 #### Create spoing for CBASS HOBO logs for Al Wajh, Yanbu, AlFahal, and Al Q ####
 boing1<-read.delim("2018-08-19_StressTank30A_clean.txt")
