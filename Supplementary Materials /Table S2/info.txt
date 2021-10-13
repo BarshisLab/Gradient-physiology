@@ -1,0 +1,1 @@
+Summary of tank temperatures were extracted from the txt files using the R code, compiled in table format using excel, and converted to PNG format.

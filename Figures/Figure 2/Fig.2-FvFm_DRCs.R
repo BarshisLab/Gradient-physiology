@@ -1,4 +1,5 @@
-#Code for Figure 2 of "A universal, empirically derived proxy for coral bleaching susceptibility"
+#Code for Figure 2 of "Empirically derived thermal thresholds of four coral species along the Red Sea"
+#Statistical results are also summarized in Table S3
 
 #setwd to source file location
 

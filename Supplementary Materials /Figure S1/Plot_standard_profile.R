@@ -1,4 +1,4 @@
-#Code to plot Fig. S1a of "A universal, empirically derived proxy for coral bleaching susceptibility"
+#Code to plot Fig. S1a of "Empirically derived thermal thresholds of four coral species along the Red Sea"
 
 #setwd to source file location
 

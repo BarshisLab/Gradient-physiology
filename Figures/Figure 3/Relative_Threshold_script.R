@@ -1,4 +1,5 @@
-#Code for Figure 3 of "A universal, empirically derived proxy for coral bleaching susceptibility"
+#Code for Figure 3 of "Empirically derived thermal thresholds of four coral species along the Red Sea"
+#Statistical results are also summarized in Table S5
 
 #setwd to source file location
 
@@ -6,7 +7,6 @@
 ######### RELATIVE THRESHOLDS #########
 #######################################
 
-library(lmerTest)
 library(emmeans)
 library(sjPlot)
 library(ggplot2)
@@ -14,6 +14,11 @@ library(tidyr)
 library(plyr)
 library(reshape2)
 library(dplyr)
+
+library(tidyverse)
+library(ggpubr)
+library(ggpmisc)
+library(svglite)
 
 Relative_thresholds<-read.csv("Relative_Thresholds.csv")
 Relative_thresholds$Site<-as.factor(Relative_thresholds$Site)
@@ -25,7 +30,7 @@ Pocillopora_relative<-subset(Relative_thresholds, Species=='Pocillopora')
 Porites_relative<-subset(Relative_thresholds, Species=='Porites')
 Stylophora_relative<-subset(Relative_thresholds, Species=='Stylophora')
 
-#### STYLOPHORA RELATIVE THRESHOLD/MMM ####
+#### RELATIVE THRESHOLD/MMM ####
 
 Relative_Threshold_mod <- aov(Relative_Threshold ~ Site * Species, data = Relative_thresholds)
 plot(Relative_Threshold_mod)
@@ -101,5 +106,4 @@ Threshold_by_site<-ggplot(threshold_summary, aes(x = Site, y = mean, fill = Spec
 
 Threshold_by_site
 
-
-#END
+##### END
